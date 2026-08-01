@@ -6,7 +6,6 @@
 
 typedef void* (*GraphFunc)(void*, void*, int);
 
-// Function prototypes for graph node operations
 void* func_add(void* a_ptr, void* b_ptr, int size);
 void* func_mul(void* a_ptr, void* b_ptr, int size);
 void* func_trig(void* a_ptr, void* b_ptr, int size);
@@ -26,102 +25,116 @@ typedef struct {
     int funcCount;
     int funcCapacity;
     GraphFunc activeFunc;
-    double** weights; // Dynamic 2D matrix: weights[totalNodes][vectorSize]
-    double* output;   // Dynamic vector of size vectorSize
+    double** weights; 
+    double* output;   
 } GraphArithmeticNode;
 
 typedef struct {
     int vectorSize;
     int totalNodes;
     int nodeCapacity;
-    GraphArithmeticNode* nodes; // Dynamic array of nodes
+    GraphArithmeticNode* nodes; 
     int* inputNodeIds;
     int* outputNodeIds;
 } FullyInterconnectedGraphNetwork;
 
-// Helper allocation functions for dynamically growing arrays
 double* create_zero_vector(int size) {
+    if (size <= 0) return NULL;
     double* v = (double*)malloc(sizeof(double) * size);
+    if (!v) {
+        fprintf(stderr, "Memory allocation failed for vector of size %d\n", size);
+        exit(EXIT_FAILURE);
+    }
     for (int i = 0; i < size; i++) v[i] = 0.0;
     return v;
 }
 
 void* func_add(void* a_ptr, void* b_ptr, int size) {
+    if (!a_ptr || !b_ptr || size <= 0) return NULL;
     double* a = (double*)a_ptr;
     double* b = (double*)b_ptr;
-    double* res = (double*)malloc(sizeof(double) * size);
+    double* res = create_zero_vector(size);
     for (int i = 0; i < size; i++) res[i] = a[i] + b[i];
     return res;
 }
 
 void* func_mul(void* a_ptr, void* b_ptr, int size) {
+    if (!a_ptr || !b_ptr || size <= 0) return NULL;
     double* a = (double*)a_ptr;
     double* b = (double*)b_ptr;
-    double* res = (double*)malloc(sizeof(double) * size);
+    double* res = create_zero_vector(size);
     for (int i = 0; i < size; i++) res[i] = a[i] * (b[i] != 0 ? b[i] : 1.0) - b[i];
     return res;
 }
 
 void* func_trig(void* a_ptr, void* b_ptr, int size) {
+    if (!a_ptr || !b_ptr || size <= 0) return NULL;
     double* a = (double*)a_ptr;
     double* b = (double*)b_ptr;
-    double* res = (double*)malloc(sizeof(double) * size);
+    double* res = create_zero_vector(size);
     for (int i = 0; i < size; i++) res[i] = sin(a[i]) * cos(b[i]);
     return res;
 }
 
 void* func_div(void* a_ptr, void* b_ptr, int size) {
+    if (!a_ptr || !b_ptr || size <= 0) return NULL;
     double* a = (double*)a_ptr;
     double* b = (double*)b_ptr;
-    double* res = (double*)malloc(sizeof(double) * size);
+    double* res = create_zero_vector(size);
     for (int i = 0; i < size; i++) res[i] = a[i] / (fabs(b[i]) + 1e-6);
     return res;
 }
 
 void* func_poly(void* a_ptr, void* b_ptr, int size) {
+    if (!a_ptr || !b_ptr || size <= 0) return NULL;
     double* a = (double*)a_ptr;
     double* b = (double*)b_ptr;
-    double* res = (double*)malloc(sizeof(double) * size);
+    double* res = create_zero_vector(size);
     for (int i = 0; i < size; i++) res[i] = pow(fabs(a[i]), 2.0) + pow(b[i], 2.0);
     return res;
 }
 
 void* func_tanh(void* a_ptr, void* b_ptr, int size) {
+    if (!a_ptr || !b_ptr || size <= 0) return NULL;
     double* a = (double*)a_ptr;
     double* b = (double*)b_ptr;
-    double* res = (double*)malloc(sizeof(double) * size);
+    double* res = create_zero_vector(size);
     for (int i = 0; i < size; i++) res[i] = tanh(a[i]) * (b[i] != 0 ? b[i] : 1.0);
     return res;
 }
 
 void* func_log(void* a_ptr, void* b_ptr, int size) {
+    if (!a_ptr || !b_ptr || size <= 0) return NULL;
     double* a = (double*)a_ptr;
     double* b = (double*)b_ptr;
-    double* res = (double*)malloc(sizeof(double) * size);
+    double* res = create_zero_vector(size);
     for (int i = 0; i < size; i++) res[i] = log(fabs(a[i]) + 1e-5) * exp(-fabs(b[i]));
     return res;
 }
 
 void* func_deriv(void* a_ptr, void* b_ptr, int size) {
+    if (!a_ptr || !b_ptr || size <= 0) return NULL;
     double* a = (double*)a_ptr;
     double* b = (double*)b_ptr;
-    double* res = (double*)malloc(sizeof(double) * size);
+    double* res = create_zero_vector(size);
     for (int i = 0; i < size; i++) res[i] = (sin(a[i] + b[i]) - sin(a[i])) / 1e-3;
     return res;
 }
 
 void* func_max(void* a_ptr, void* b_ptr, int size) {
+    if (!a_ptr || !b_ptr || size <= 0) return NULL;
     double* a = (double*)a_ptr;
     double* b = (double*)b_ptr;
-    double* res = (double*)malloc(sizeof(double) * size);
+    double* res = create_zero_vector(size);
     for (int i = 0; i < size; i++) res[i] = (a[i] > b[i]) ? a[i] : b[i];
     return res;
 }
 
 void* func_sigmoid(void* a_ptr, void* b_ptr, int size) {
+    if (!a_ptr || !b_ptr || size <= 0) return NULL;
     double* a = (double*)a_ptr;
     double* b = (double*)b_ptr;
-    double* res = (double*)malloc(sizeof(double) * size);
+    double* res = create_zero_vector(size);
     for (int i = 0; i < size; i++) res[i] = 1.0 / (1.0 + exp(-a[i] * b[i]));
     return res;
 }
@@ -131,10 +144,13 @@ void init_node(GraphArithmeticNode* node, int id, int totalNodes, int vectorSize
     node->bias = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
     node->gate = (double)rand() / RAND_MAX;
     
-    // Dynamically expand function capacity (infinitely extensible)
     node->funcCapacity = 32;
     node->funcCount = 10;
     node->functionLibrary = (GraphFunc*)malloc(sizeof(GraphFunc) * node->funcCapacity);
+    if (!node->functionLibrary) {
+        perror("Failed to allocate function library");
+        exit(EXIT_FAILURE);
+    }
     
     node->functionLibrary[0] = func_add;
     node->functionLibrary[1] = func_mul;
@@ -149,24 +165,19 @@ void init_node(GraphArithmeticNode* node, int id, int totalNodes, int vectorSize
     
     node->activeFunc = node->functionLibrary[rand() % node->funcCount];
     
-    // Allocate dynamic weights matrix [totalNodes x vectorSize]
     node->weights = (double**)malloc(sizeof(double*) * totalNodes);
+    if (!node->weights) {
+        perror("Failed to allocate weights matrix rows");
+        exit(EXIT_FAILURE);
+    }
     for (int i = 0; i < totalNodes; i++) {
-        node->weights[i] = (double*)malloc(sizeof(double) * vectorSize);
+        node->weights[i] = create_zero_vector(vectorSize);
         for (int j = 0; j < vectorSize; j++) {
             node->weights[i][j] = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
         }
     }
     
     node->output = create_zero_vector(vectorSize);
-}
-
-void add_function_to_node(GraphArithmeticNode* node, GraphFunc newFunc) {
-    if (node->funcCount >= node->funcCapacity) {
-        node->funcCapacity *= 2;
-        node->functionLibrary = (GraphFunc*)realloc(node->functionLibrary, sizeof(GraphFunc) * node->funcCapacity);
-    }
-    node->functionLibrary[node->funcCount++] = newFunc;
 }
 
 void compute_node(GraphArithmeticNode* node, double** nodeOutputs, int totalNodes, int vectorSize) {
@@ -186,13 +197,15 @@ void compute_node(GraphArithmeticNode* node, double** nodeOutputs, int totalNode
     for (int i = 0; i < vectorSize; i++) biasArr[i] = node->bias;
     
     double* funcRes = (double*)node->activeFunc(acc, biasArr, vectorSize);
-    for (int i = 0; i < vectorSize; i++) {
-        node->output[i] = funcRes[i] * node->gate;
+    if (funcRes) {
+        for (int i = 0; i < vectorSize; i++) {
+            node->output[i] = funcRes[i] * node->gate;
+        }
+        free(funcRes);
     }
     
     free(acc);
     free(biasArr);
-    free(funcRes);
 }
 
 void mutate_node(GraphArithmeticNode* node, int totalNodes, int vectorSize) {
@@ -218,8 +231,12 @@ void init_network(FullyInterconnectedGraphNetwork* net, int initialVectorSize, i
     net->nodeCapacity = initialTotalNodes * 2;
     
     net->nodes = (GraphArithmeticNode*)malloc(sizeof(GraphArithmeticNode) * net->nodeCapacity);
+    if (!net->nodes) {
+        perror("Failed to allocate network nodes");
+        exit(EXIT_FAILURE);
+    }
     for (int i = 0; i < net->totalNodes; i++) {
-        init_node(&net->nodes[i], i, net->totalNodes, net->vectorSize);
+        init_node(&net->nodes[i], i, net->nodeCapacity, net->vectorSize);
     }
     
     net->inputNodeIds = (int*)malloc(sizeof(int) * 2);
@@ -233,13 +250,22 @@ void init_network(FullyInterconnectedGraphNetwork* net, int initialVectorSize, i
 void add_node_to_network(FullyInterconnectedGraphNetwork* net) {
     if (net->totalNodes >= net->nodeCapacity) {
         net->nodeCapacity *= 2;
-        net->nodes = (GraphArithmeticNode*)realloc(net->nodes, sizeof(GraphArithmeticNode) * net->nodeCapacity);
+        GraphArithmeticNode* tempNodes = (GraphArithmeticNode*)realloc(net->nodes, sizeof(GraphArithmeticNode) * net->nodeCapacity);
+        if (!tempNodes) {
+            perror("Failed to reallocate network nodes");
+            exit(EXIT_FAILURE);
+        }
+        net->nodes = tempNodes;
         
-        // Reallocate weight matrices for all existing nodes to accommodate the new totalNodes size
         for (int i = 0; i < net->totalNodes; i++) {
-            net->nodes[i].weights = (double**)realloc(net->nodes[i].weights, sizeof(double*) * net->nodeCapacity);
+            double** tempWeights = (double**)realloc(net->nodes[i].weights, sizeof(double*) * net->nodeCapacity);
+            if (!tempWeights) {
+                perror("Failed to reallocate node weights");
+                exit(EXIT_FAILURE);
+            }
+            net->nodes[i].weights = tempWeights;
             for (int j = net->totalNodes; j < net->nodeCapacity; j++) {
-                net->nodes[i].weights[j] = (double*)malloc(sizeof(double) * net->vectorSize);
+                net->nodes[i].weights[j] = create_zero_vector(net->vectorSize);
                 for (int v = 0; v < net->vectorSize; v++) {
                     net->nodes[i].weights[j][v] = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
                 }
@@ -250,11 +276,15 @@ void add_node_to_network(FullyInterconnectedGraphNetwork* net) {
     int newId = net->totalNodes;
     init_node(&net->nodes[newId], newId, net->nodeCapacity, net->vectorSize);
     net->totalNodes++;
+    net->outputNodeIds[0] = net->totalNodes - 1;
 }
 
 void forward_network(FullyInterconnectedGraphNetwork* net, double* inputVector1, double* inputVector2, double* outputResult) {
-    // Dynamically allocate nodeOutputs matrix [totalNodes x vectorSize]
     double** nodeOutputs = (double**)malloc(sizeof(double*) * net->totalNodes);
+    if (!nodeOutputs) {
+        perror("Failed to allocate nodeOutputs");
+        exit(EXIT_FAILURE);
+    }
     for (int i = 0; i < net->totalNodes; i++) {
         nodeOutputs[i] = create_zero_vector(net->vectorSize);
     }
@@ -297,11 +327,16 @@ void train_from_file(FullyInterconnectedGraphNetwork* net, const char* filePath,
     long length = ftell(f);
     fseek(f, 0, SEEK_SET);
     char* rawText = (char*)malloc(length + 1);
+    if (!rawText) {
+        perror("Failed to allocate rawText");
+        fclose(f);
+        exit(EXIT_FAILURE);
+    }
     fread(rawText, 1, length, f);
     fclose(f);
     rawText[length] = '\0';
     
-    printf("Loaded array text file. Length: %ld chars. Infinite scale graph training initializing...\n", length);
+    printf("Loaded array text file. Length: %ld chars. Bounded memory graph training initializing...\n", length);
     
     int datasetSize = length - net->vectorSize;
     if (datasetSize <= 0) {
@@ -351,7 +386,7 @@ void train_from_file(FullyInterconnectedGraphNetwork* net, const char* filePath,
         
         double currentLoss = totalError / datasetSize;
         if (epoch % (maxEpochs / 5 == 0 ? 1 : maxEpochs / 5) == 0 || epoch == 1) {
-            printf("Epoch %d/%d | Infinite Graph Loss: %f | Nodes: %d\n", epoch, maxEpochs, currentLoss, net->totalNodes);
+            printf("Epoch %d/%d | Graph Loss: %f | Nodes: %d\n", epoch, maxEpochs, currentLoss, net->totalNodes);
         }
         
         if (currentLoss < 0.0001) {
@@ -363,8 +398,7 @@ void train_from_file(FullyInterconnectedGraphNetwork* net, const char* filePath,
             mutate_node(&net->nodes[n], net->totalNodes, net->vectorSize);
         }
         
-        // Infinitely scale graph structure by expanding nodes periodically
-        if (((double)rand() / RAND_MAX) < 0.20) {
+        if (((double)rand() / RAND_MAX) < 0.15) {
             add_node_to_network(net);
         }
     }
@@ -388,7 +422,7 @@ void generate_text(FullyInterconnectedGraphNetwork* net, const char* seedText, i
         v2[i] = (i + 1 < seedLen) ? (double)(unsigned char)seedText[i + 1] / 255.0 : 32.0 / 255.0;
     }
     
-    printf("\n--- Infinite Scale Graph Text Generation Output ---\n");
+    printf("\n--- Safe C Graph Text Generation Output ---\n");
     printf("%s", seedText);
     
     for (int step = 0; step < length; step++) {
@@ -413,19 +447,33 @@ void generate_text(FullyInterconnectedGraphNetwork* net, const char* seedText, i
     free(v2);
 }
 
+void free_network(FullyInterconnectedGraphNetwork* net) {
+    for (int i = 0; i < net->nodeCapacity; i++) {
+        for (int j = 0; j < net->nodeCapacity; j++) {
+            free(net->nodes[i].weights[j]);
+        }
+        free(net->nodes[i].weights);
+        free(net->nodes[i].functionLibrary);
+        free(net->nodes[i].output);
+    }
+    free(net->nodes);
+    free(net->inputNodeIds);
+    free(net->outputNodeIds);
+}
+
 int main(int argc, char* argv[]) {
     srand((unsigned int)time(NULL));
     FullyInterconnectedGraphNetwork net;
     
-    // Initialize with extensible dynamic scale dimensions
     init_network(&net, 8, 12);
     
     if (argc >= 3 && strcmp(argv[1], "--train") == 0) {
         train_from_file(&net, argv[2], 200);
     } else {
-        const char* seed = "Infinite";
+        const char* seed = "SafeRun";
         generate_text(&net, seed, 60);
     }
     
+    free_network(&net);
     return 0;
 }
