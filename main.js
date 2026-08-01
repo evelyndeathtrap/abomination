@@ -14,19 +14,14 @@ class GraphArithmeticNode {
         
         // Comprehensive library containing advanced algebra, calculus, and vector-processing functions
         this.functionLibrary = [
-            // Element-wise and vector algebra
             (a, b) => a.map((val, i) => val + (b[i] || 0)),
             (a, b) => a.map((val, i) => val * (b[i] || 1) - (b[i] || 0)),
             (a, b) => a.map((val, i) => Math.sin(val) * Math.cos(b[i] || 0)),
             (a, b) => a.map((val, i) => val / (Math.abs(b[i] || 0) + 1e-6)),
             (a, b) => a.map((val, i) => Math.pow(Math.abs(val), 2) + Math.pow(b[i] || 0, 2)),
-            
-            // Calculus & Numerical Approximations on arrays
             (a, b) => a.map((val, i) => Math.tanh(val) * (b[i] || 1)),
             (a, b) => a.map((val, i) => Math.log(Math.abs(val) + 1e-5) * Math.exp(-Math.abs(b[i] || 0))),
             (a, b) => a.map((val, i) => (Math.sin(val + (b[i] || 0)) - Math.sin(val)) / 1e-3),
-            
-            // Transcendental & Bounded Array Operators
             (a, b) => a.map((val, i) => Math.max(val, b[i] || 0)),
             (a, b) => a.map((val, i) => 1 / (1 + Math.exp(-val * (b[i] || 1))))
         ];
@@ -57,12 +52,10 @@ class GraphArithmeticNode {
     }
 
     compute(incomingValuesMap, vectorSize) {
-        // Initialize an array accumulator for vector processing
         let acc = Array(vectorSize).fill(this.bias);
         
         for (const [sourceId, valArray] of incomingValuesMap.entries()) {
             if (!this.weights.has(sourceId)) {
-                // Initialize vector weights for multi-dimensional mapping
                 const wArr = Array.from({ length: vectorSize }, () => Math.random() * 2 - 1);
                 this.weights.set(sourceId, wArr);
             }
@@ -114,8 +107,7 @@ class FullyInterconnectedGraphNetwork {
         this.inputNodeIds = [];
         this.outputNodeIds = [];
 
-        // In array graph architecture, input, hidden, and output nodes handle vector embeddings
-        for (let i = 0; i < 2; i++) { // Input vector slots
+        for (let i = 0; i < 2; i++) {
             const node = new GraphArithmeticNode(idCounter++);
             this.nodes.push(node);
             this.inputNodeIds.push(node.id);
@@ -126,7 +118,7 @@ class FullyInterconnectedGraphNetwork {
             this.nodes.push(new GraphArithmeticNode(idCounter++));
         }
 
-        for (let i = 0; i < 1; i++) { // Output vector result slot
+        for (let i = 0; i < 1; i++) {
             const node = new GraphArithmeticNode(idCounter++);
             this.nodes.push(node);
             this.outputNodeIds.push(node.id);
@@ -194,7 +186,7 @@ class FullyInterconnectedGraphNetwork {
         }
     }
 
-    trainFromFile(filePath, epochs = 1000, lr = 0.005) {
+    trainFromFile(filePath, maxEpochs = 200, lr = 0.005, targetLossThreshold = 0.0001) {
         if (!fs.existsSync(filePath)) {
             console.error(`Error: Training file "${filePath}" does not exist.`);
             process.exit(1);
@@ -203,7 +195,6 @@ class FullyInterconnectedGraphNetwork {
         const rawText = fs.readFileSync(filePath, 'utf8');
         console.log(`Loaded array text file ("${filePath}"). Length: ${rawText.length} chars. Constructing array tensor training windows...`);
 
-        // Convert text streams into sliding vector arrays
         const dataset = [];
         for (let i = 0; i < rawText.length - this.vectorSize; i++) {
             const vectorIn1 = [];
@@ -218,9 +209,9 @@ class FullyInterconnectedGraphNetwork {
             dataset.push({ inputs: [vectorIn1, vectorIn2], targets: [vectorTarget] });
         }
 
-        console.log(`Generated ${dataset.length} array tensor samples. Optimizing graph topology...`);
+        console.log(`Generated ${dataset.length} array tensor samples. Optimizing graph topology (Bounded max epochs: ${maxEpochs})...`);
 
-        for (let epoch = 0; epoch < epochs; epoch++) {
+        for (let epoch = 1; epoch <= maxEpochs; epoch++) {
             let totalError = 0;
             
             for (const sample of dataset) {
@@ -244,10 +235,19 @@ class FullyInterconnectedGraphNetwork {
                 }
             }
 
-            if (epoch % Math.max(1, Math.floor(epochs / 5)) === 0) {
-                console.log(`Epoch ${epoch}/${epochs} | Array Tensor Loss: ${(totalError / dataset.length).toFixed(6)} | Graph Nodes: ${this.nodes.length}`);
-                this.mutateNetwork();
+            const currentLoss = totalError / dataset.length;
+
+            if (epoch % Math.max(1, Math.floor(maxEpochs / 5)) === 0 || epoch === 1) {
+                console.log(`Epoch ${epoch}/${maxEpochs} | Array Tensor Loss: ${currentLoss.toFixed(6)} | Graph Nodes: ${this.nodes.length}`);
             }
+
+            // Early stopping condition to prevent training forever
+            if (currentLoss < targetLossThreshold) {
+                console.log(`\n[Early Stopping]: Reached target loss threshold (${currentLoss.toFixed(6)}) at epoch ${epoch}.`);
+                break;
+            }
+
+            this.mutateNetwork();
         }
         
         fs.writeFileSync('model.json', JSON.stringify({
@@ -260,7 +260,7 @@ class FullyInterconnectedGraphNetwork {
                 output: n.output
             }))
         }, null, 2));
-        console.log('Training successfully completed. Array graph model saved to model.json');
+        console.log('Training successfully completed and bounded. Array graph model saved to model.json');
     }
 
     loadModel(filePath) {
@@ -322,7 +322,8 @@ function main() {
     if (args.length >= 2 && args[0] === '--train') {
         const filePath = args[1];
         const net = new FullyInterconnectedGraphNetwork(vectorSize, 8);
-        net.trainFromFile(filePath, 1200, 0.005);
+        // Bounded training epochs added here to stop automatic infinite looping
+        net.trainFromFile(filePath, 200, 0.005, 0.0001);
     } else {
         const net = new FullyInterconnectedGraphNetwork(vectorSize, 8);
         if (fs.existsSync('model.json')) {
